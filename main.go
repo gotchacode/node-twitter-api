@@ -1,3 +1,9 @@
+// Goals:
+// The goals for this API is following.
+// - Provide API endpints for tweets, users, analytics, comments
+// - Small isolated modular functions that provide an easy interface to build
+// upon.
+
 package main
 
 import (
@@ -25,13 +31,21 @@ type Tweet struct {
 	User bson.ObjectId
 }
 
-func connectDB(dailURL string) (*mgo.Session, error) {
-	mgo.SetDebug(true)
+type Analytics struct {
+	ID   bson.ObjectId `bson:"_id,omitempty"`
+	IP   string
+	User bson.ObjectId
+	Url  string
+}
 
-	var aLogger *log.Logger
-	aLogger = log.New(os.Stderr, "", log.LstdFlags)
-	mgo.SetLogger(aLogger)
+func connectDB(dailURL string, debug bool) (*mgo.Session, error) {
+	if debug {
+		mgo.SetDebug(debug)
 
+		var aLogger *log.Logger
+		aLogger = log.New(os.Stderr, "", log.LstdFlags)
+		mgo.SetLogger(aLogger)
+	}
 	session, err := mgo.Dial(dailURL)
 	fmt.Println("Trying to connect to DB")
 	if err != nil {
@@ -41,17 +55,29 @@ func connectDB(dailURL string) (*mgo.Session, error) {
 	return session, err
 }
 
+func getAnalytics(session *mgo.Session, err error) {
+	AnalyticConnection := session.DB("ntwitter").C("analytics")
+	var analytics Analytics
+	err = AnalyticConnection.Find(nil).One(&analytics)
+	fmt.Println("analytics", analytics)
+	var analyticsList []Analytics
+	err = AnalyticConnection.Find(nil).All(&analyticsList)
+	for _, analytic := range analyticsList {
+		fmt.Println("analytic", analytic.User, analytic.IP, analytic.Url)
+	}
+}
+
 func getUsers(session *mgo.Session, err error) {
-	c := session.DB("ntwitter").C("users")
+	userConnection := session.DB("ntwitter").C("users")
 	var userResult User
 	fmt.Println("Trying to query one users")
-	err = c.Find(bson.M{"username": "vinitkumar"}).One(&userResult)
+	err = userConnection.Find(bson.M{"username": "vinitkumar"}).One(&userResult)
 	fmt.Println("user query", userResult)
 	fmt.Print("userID", userResult.ID)
 
 	var results []User
 	fmt.Println("Trying to find all users of a certain provider")
-	err = c.Find(bson.M{"provider": "github"}).All(&results)
+	err = userConnection.Find(bson.M{"provider": "github"}).All(&results)
 	if err != nil {
 		panic(err)
 	}
@@ -62,28 +88,29 @@ func getUsers(session *mgo.Session, err error) {
 }
 
 func getTweets(session *mgo.Session, err error) {
-	connectionUser := session.DB("ntwitter").C("users")
+	UserConnection := session.DB("ntwitter").C("users")
 	var userResult User
-	err = connectionUser.Find(bson.M{"username": "vinitkumar"}).One(&userResult)
+	err = UserConnection.Find(bson.M{"username": "vinitkumar"}).One(&userResult)
 	fmt.Println("Finding user for a tweet query")
 	fmt.Print("userID", userResult.ID)
 
-	connectionTweet := session.DB("ntwitter").C("tweets")
+	TweetConnection := session.DB("ntwitter").C("tweets")
 	var tweet Tweet
-	err = connectionTweet.Find(bson.M{"user": userResult.ID}).One(&tweet)
+	err = TweetConnection.Find(bson.M{"user": userResult.ID}).One(&tweet)
 	fmt.Println("tweet", tweet)
 
-	err = connectionTweet.Find(bson.M{"Body": "Kya chutiyaapa hai"}).One(&tweet)
+	err = TweetConnection.Find(bson.M{"Body": "Kya chutiyaapa hai"}).One(&tweet)
 	fmt.Println("tweet", tweet)
 	var tweets []Tweet
 	fmt.Println("sample request", bson.M{"user": userResult.ID})
-	err = connectionTweet.Find(bson.M{"user": userResult.ID}).All(&tweets)
+	err = TweetConnection.Find(bson.M{"user": userResult.ID}).All(&tweets)
 	fmt.Println("tweets", tweets)
 }
 
 func main() {
 	var mongodbURL = os.Getenv("MONGODB_URL")
-	session, err := connectDB(mongodbURL)
-	getUsers(session, err)
-	getTweets(session, err)
+	session, err := connectDB(mongodbURL, false)
+	//getUsers(session, err)
+	//getTweets(session, err)
+	getAnalytics(session, err)
 }
