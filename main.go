@@ -15,6 +15,9 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+// Query Map
+type Query map[string]string
+
 // User struct
 type User struct {
 	ID       bson.ObjectId `bson:"_id,omitempty"`
@@ -31,11 +34,12 @@ type Tweet struct {
 	User bson.ObjectId
 }
 
-type Analytics struct {
+// Analytic struct
+type Analytic struct {
 	ID   bson.ObjectId `bson:"_id,omitempty"`
 	IP   string
 	User bson.ObjectId
-	Url  string
+	URL  string
 }
 
 func connectDB(dailURL string, debug bool) (*mgo.Session, error) {
@@ -55,62 +59,67 @@ func connectDB(dailURL string, debug bool) (*mgo.Session, error) {
 	return session, err
 }
 
-func getAnalytics(session *mgo.Session, err error) {
+func getAnalytic(session *mgo.Session, err error) Analytic {
 	AnalyticConnection := session.DB("ntwitter").C("analytics")
-	var analytics Analytics
-	err = AnalyticConnection.Find(nil).One(&analytics)
-	fmt.Println("analytics", analytics)
-	var analyticsList []Analytics
-	err = AnalyticConnection.Find(nil).All(&analyticsList)
-	for _, analytic := range analyticsList {
-		fmt.Println("analytic", analytic.User, analytic.IP, analytic.Url)
-	}
+	var analytic Analytic
+	err = AnalyticConnection.Find(nil).One(&analytic)
+	return analytic
 }
 
-func getUsers(session *mgo.Session, err error) {
-	userConnection := session.DB("ntwitter").C("users")
-	var userResult User
-	fmt.Println("Trying to query one users")
-	err = userConnection.Find(bson.M{"username": "vinitkumar"}).One(&userResult)
-	fmt.Println("user query", userResult)
-	fmt.Print("userID", userResult.ID)
+func getAnalytics(session *mgo.Session, err error) []Analytic {
+	AnalyticConnection := session.DB("ntwitter").C("analytics")
+	var analyticsList []Analytic
+	err = AnalyticConnection.Find(nil).All(&analyticsList)
+	return analyticsList
+}
 
-	var results []User
+func getUser(session *mgo.Session, err error) User {
+	userConnection := session.DB("ntwitter").C("users")
+	var user User
+	fmt.Println("Trying to query one users")
+	err = userConnection.Find(bson.M{"username": "vinitkumar"}).One(&user)
+	return user
+}
+
+func getUsers(session *mgo.Session, err error) []User {
+	userConnection := session.DB("ntwitter").C("users")
+	var users []User
 	fmt.Println("Trying to find all users of a certain provider")
-	err = userConnection.Find(bson.M{"provider": "github"}).All(&results)
+	err = userConnection.Find(bson.M{"provider": "github"}).All(&users)
 	if err != nil {
 		panic(err)
 	}
-	//for _, result := range results {
-	//	fmt.Println("username", result.Username, result.Provider)
-	//}
-	// fmt.Println("username", results)
+	return users
 }
 
-func getTweets(session *mgo.Session, err error) {
+func getTweet(session *mgo.Session, err error) Tweet {
 	UserConnection := session.DB("ntwitter").C("users")
 	var userResult User
 	err = UserConnection.Find(bson.M{"username": "vinitkumar"}).One(&userResult)
 	fmt.Println("Finding user for a tweet query")
 	fmt.Print("userID", userResult.ID)
-
 	TweetConnection := session.DB("ntwitter").C("tweets")
 	var tweet Tweet
 	err = TweetConnection.Find(bson.M{"user": userResult.ID}).One(&tweet)
-	fmt.Println("tweet", tweet)
+	return tweet
+}
 
-	err = TweetConnection.Find(bson.M{"Body": "Kya chutiyaapa hai"}).One(&tweet)
-	fmt.Println("tweet", tweet)
+func getTweets(session *mgo.Session, err error) []Tweet {
+	UserConnection := session.DB("ntwitter").C("users")
+	var userResult User
+	err = UserConnection.Find(bson.M{"username": "vinitkumar"}).One(&userResult)
+	TweetConnection := session.DB("ntwitter").C("tweets")
 	var tweets []Tweet
 	fmt.Println("sample request", bson.M{"user": userResult.ID})
 	err = TweetConnection.Find(bson.M{"user": userResult.ID}).All(&tweets)
-	fmt.Println("tweets", tweets)
+	return tweets
 }
 
 func main() {
 	var mongodbURL = os.Getenv("MONGODB_URL")
 	session, err := connectDB(mongodbURL, false)
-	//getUsers(session, err)
-	//getTweets(session, err)
-	getAnalytics(session, err)
+	fmt.Println(getUser(session, err))
+	fmt.Println(getUsers(session, err))
+	fmt.Println(getTweets(session, err))
+	fmt.Println(getAnalytics(session, err))
 }
