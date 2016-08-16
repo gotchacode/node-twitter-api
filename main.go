@@ -9,6 +9,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	mgo "gopkg.in/mgo.v2"
@@ -115,11 +116,60 @@ func getTweets(session *mgo.Session, err error) []Tweet {
 	return tweets
 }
 
-func main() {
+func UserHandler(w http.ResponseWriter, r *http.Request) {
 	var mongodbURL = os.Getenv("MONGODB_URL")
 	session, err := connectDB(mongodbURL, false)
-	fmt.Println(getUser(session, err))
-	fmt.Println(getUsers(session, err))
-	fmt.Println(getTweets(session, err))
-	fmt.Println(getAnalytics(session, err))
+	var user User
+	user = getUser(session, err)
+	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div><div>%s</div>", user.Name, user.Email, user)
+}
+
+func UsersHandler(w http.ResponseWriter, r *http.Request) {
+	var mongodbURL = os.Getenv("MONGODB_URL")
+	session, err := connectDB(mongodbURL, false)
+	var users []User
+	users = getUsers(session, err)
+	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Users", users)
+}
+
+func TweetsHandler(w http.ResponseWriter, r *http.Request) {
+	var mongodbURL = os.Getenv("MONGODB_URL")
+	session, err := connectDB(mongodbURL, false)
+	var tweets []Tweet
+	tweets = getTweets(session, err)
+	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Tweets", tweets)
+}
+
+func TweetHandler(w http.ResponseWriter, r *http.Request) {
+	var mongodbURL = os.Getenv("MONGODB_URL")
+	session, err := connectDB(mongodbURL, false)
+	var tweet Tweet
+	tweet = getTweet(session, err)
+	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Tweet", tweet)
+}
+
+func AnalyticHandler(w http.ResponseWriter, r *http.Request) {
+	var mongodbURL = os.Getenv("MONGODB_URL")
+	session, err := connectDB(mongodbURL, false)
+	var analytic Analytic
+	analytic = getAnalytic(session, err)
+	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Analytic", analytic)
+}
+
+func AnalyticsHandler(w http.ResponseWriter, r *http.Request) {
+	var mongodbURL = os.Getenv("MONGODB_URL")
+	session, err := connectDB(mongodbURL, false)
+	var analytics []Analytic
+	analytics = getAnalytics(session, err)
+	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Analytics", analytics)
+}
+
+func main() {
+	http.HandleFunc("/", UserHandler)
+	http.HandleFunc("/users", UsersHandler)
+	http.HandleFunc("/tweet", TweetHandler)
+	http.HandleFunc("/tweets", TweetsHandler)
+	http.HandleFunc("/analytic", AnalyticHandler)
+	http.HandleFunc("/analytics", AnalyticsHandler)
+	http.ListenAndServe(":8080", nil)
 }

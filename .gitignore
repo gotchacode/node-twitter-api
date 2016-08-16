@@ -2,7 +2,8 @@
 *.o
 *.a
 *.so
-
+main
+ssa.html
 # Folders
 _obj
 _test
