@@ -17,15 +17,15 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-// Routes
+// Routes   routes of the API
 type Routes struct {
 	Title     string
-	FirstUrl  string
-	SecondUrl string
-	ThirdUrl  string
-	ForthUrl  string
-	FifthUrl  string
-	SixthUrl  string
+	FirstURL  string
+	SecondURL string
+	ThirdURL  string
+	ForthURL  string
+	FifthURL  string
+	SixthURL  string
 }
 
 // Query Map
@@ -193,17 +193,18 @@ func AnalyticsHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Analytics", analytics)
 }
 
+// BaseHandler   Show a landing page with links of the APIs.
 func BaseHandler(w http.ResponseWriter, r *http.Request) {
 	routes := []string{"/currentuser", "/users", "/tweet", "/tweets", "/analytic", "/analytics"}
 	t, _ := template.ParseFiles("base.html")
 	contextVaribles := &Routes{
 		Title:     "Welcome to Node Twitter API",
-		FirstUrl:  routes[0],
-		SecondUrl: routes[1],
-		ThirdUrl:  routes[2],
-		ForthUrl:  routes[3],
-		FifthUrl:  routes[4],
-		SixthUrl:  routes[5],
+		FirstURL:  routes[0],
+		SecondURL: routes[1],
+		ThirdURL:  routes[2],
+		ForthURL:  routes[3],
+		FifthURL:  routes[4],
+		SixthURL:  routes[5],
 	}
 	t.Execute(w, contextVaribles)
 }
