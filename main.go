@@ -8,6 +8,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +16,17 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
+
+// Routes
+type Routes struct {
+	Title     string
+	FirstUrl  string
+	SecondUrl string
+	ThirdUrl  string
+	ForthUrl  string
+	FifthUrl  string
+	SixthUrl  string
+}
 
 // Query Map
 type Query map[string]string
@@ -43,6 +55,7 @@ type Analytic struct {
 	URL  string
 }
 
+// Connect to the MongoDB
 func connectDB(dailURL string, debug bool) (*mgo.Session, error) {
 	if debug {
 		mgo.SetDebug(debug)
@@ -60,6 +73,17 @@ func connectDB(dailURL string, debug bool) (*mgo.Session, error) {
 	return session, err
 }
 
+// Get session and returns it for a valid session, else throw an error
+func getSession() (session *mgo.Session, err error) {
+	var mongodbURL = os.Getenv("MONGODB_URL")
+	sessionMongo, errMongo := connectDB(mongodbURL, false)
+	if errMongo != nil {
+		log.Fatal(errMongo)
+	}
+	return sessionMongo, errMongo
+}
+
+// Get Analytic and return it.
 func getAnalytic(session *mgo.Session, err error) Analytic {
 	AnalyticConnection := session.DB("ntwitter").C("analytics")
 	var analytic Analytic
@@ -67,6 +91,7 @@ func getAnalytic(session *mgo.Session, err error) Analytic {
 	return analytic
 }
 
+// Get list of all analytics and returns it.
 func getAnalytics(session *mgo.Session, err error) []Analytic {
 	AnalyticConnection := session.DB("ntwitter").C("analytics")
 	var analyticsList []Analytic
@@ -74,6 +99,7 @@ func getAnalytics(session *mgo.Session, err error) []Analytic {
 	return analyticsList
 }
 
+// Get current user and return it.
 func getUser(session *mgo.Session, err error) User {
 	userConnection := session.DB("ntwitter").C("users")
 	var user User
@@ -82,6 +108,7 @@ func getUser(session *mgo.Session, err error) User {
 	return user
 }
 
+// Get list of all users and returns it.
 func getUsers(session *mgo.Session, err error) []User {
 	userConnection := session.DB("ntwitter").C("users")
 	var users []User
@@ -93,6 +120,7 @@ func getUsers(session *mgo.Session, err error) []User {
 	return users
 }
 
+// Gets tweets by an user and reurns it.
 func getTweet(session *mgo.Session, err error) Tweet {
 	UserConnection := session.DB("ntwitter").C("users")
 	var userResult User
@@ -105,6 +133,7 @@ func getTweet(session *mgo.Session, err error) Tweet {
 	return tweet
 }
 
+// Gets list of all tweets and returns it.
 func getTweets(session *mgo.Session, err error) []Tweet {
 	UserConnection := session.DB("ntwitter").C("users")
 	var userResult User
@@ -116,56 +145,72 @@ func getTweets(session *mgo.Session, err error) []Tweet {
 	return tweets
 }
 
+// UserHandler   : Returns the current user of the session.
 func UserHandler(w http.ResponseWriter, r *http.Request) {
-	var mongodbURL = os.Getenv("MONGODB_URL")
-	session, err := connectDB(mongodbURL, false)
+	session, err := getSession()
 	var user User
 	user = getUser(session, err)
 	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div><div>%s</div>", user.Name, user.Email, user)
 }
 
+// UsersHandler   : Returns list of all users in the database.
 func UsersHandler(w http.ResponseWriter, r *http.Request) {
-	var mongodbURL = os.Getenv("MONGODB_URL")
-	session, err := connectDB(mongodbURL, false)
+	session, err := getSession()
 	var users []User
 	users = getUsers(session, err)
 	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Users", users)
 }
 
+// TweetsHandler   : Returns list of all tweets in the database.
 func TweetsHandler(w http.ResponseWriter, r *http.Request) {
-	var mongodbURL = os.Getenv("MONGODB_URL")
-	session, err := connectDB(mongodbURL, false)
+	session, err := getSession()
 	var tweets []Tweet
 	tweets = getTweets(session, err)
 	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Tweets", tweets)
 }
 
+// TweetHandler  : Returns tweet by an user in the database.
 func TweetHandler(w http.ResponseWriter, r *http.Request) {
-	var mongodbURL = os.Getenv("MONGODB_URL")
-	session, err := connectDB(mongodbURL, false)
+	session, err := getSession()
 	var tweet Tweet
 	tweet = getTweet(session, err)
 	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Tweet", tweet)
 }
 
+// AnalyticHandler   : Return one analytic entry from the database.
 func AnalyticHandler(w http.ResponseWriter, r *http.Request) {
-	var mongodbURL = os.Getenv("MONGODB_URL")
-	session, err := connectDB(mongodbURL, false)
+	session, err := getSession()
 	var analytic Analytic
 	analytic = getAnalytic(session, err)
 	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Analytic", analytic)
 }
 
+// AnalyticsHandler   : Returns list of all analytics in the database.
 func AnalyticsHandler(w http.ResponseWriter, r *http.Request) {
-	var mongodbURL = os.Getenv("MONGODB_URL")
-	session, err := connectDB(mongodbURL, false)
+	session, err := getSession()
 	var analytics []Analytic
 	analytics = getAnalytics(session, err)
 	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Analytics", analytics)
 }
 
+func BaseHandler(w http.ResponseWriter, r *http.Request) {
+	routes := []string{"/currentuser", "/users", "/tweet", "/tweets", "/analytic", "/analytics"}
+	t, _ := template.ParseFiles("base.html")
+	contextVaribles := &Routes{
+		Title:     "Welcome to Node Twitter API",
+		FirstUrl:  routes[0],
+		SecondUrl: routes[1],
+		ThirdUrl:  routes[2],
+		ForthUrl:  routes[3],
+		FifthUrl:  routes[4],
+		SixthUrl:  routes[5],
+	}
+	t.Execute(w, contextVaribles)
+}
+
 func main() {
-	http.HandleFunc("/", UserHandler)
+	http.HandleFunc("/", BaseHandler)
+	http.HandleFunc("/currentuser", UserHandler)
 	http.HandleFunc("/users", UsersHandler)
 	http.HandleFunc("/tweet", TweetHandler)
 	http.HandleFunc("/tweets", TweetsHandler)
