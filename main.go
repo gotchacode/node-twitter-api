@@ -4,7 +4,7 @@
 // - Small isolated modular functions that provide an easy interface to build
 // upon.
 
-package main
+package node_twitter_api
 
 import (
 	"fmt"
