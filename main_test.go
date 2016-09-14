@@ -1,7 +1,16 @@
-package node_twitter_api
+package nodetwitterapi
 
 import "testing"
 
 func TestAPI(t *testing.T) {
-	t.Fail()
+	_, err := getSession()
+	if err != nil {
+		t.Fail()
+	}
+
+	var analytic Analytic
+	analytic, err := getAnalytic()
+	if err != nil {
+		t.Fail()
+	}
 }
