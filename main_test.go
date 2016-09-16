@@ -5,12 +5,6 @@ import "testing"
 func TestAPI(t *testing.T) {
 	_, err := getSession()
 	if err != nil {
-		t.Fail()
-	}
-
-	var analytic Analytic
-	analytic, err := getAnalytic()
-	if err != nil {
-		t.Fail()
+        t.Errorf("Sorry! Failed to get the session: %s", err)
 	}
 }
