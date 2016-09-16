@@ -4,7 +4,7 @@
 // - Small isolated modular functions that provide an easy interface to build
 // upon.
 
-package node_twitter_api
+package nodetwitterapi
 
 import (
 	"fmt"
@@ -20,12 +20,12 @@ import (
 // Routes   routes of the API
 type Routes struct {
 	Title     string
-	FirstURL  string
-	SecondURL string
-	ThirdURL  string
-	ForthURL  string
-	FifthURL  string
-	SixthURL  string
+	CurrentUserURl  string
+	UserListURL string
+	TweetURL  string
+	TweetListURL  string
+	AnalyticURL  string
+	AnalyticListURL  string
 }
 
 // Query Map
@@ -199,12 +199,12 @@ func BaseHandler(w http.ResponseWriter, r *http.Request) {
 	t, _ := template.ParseFiles("base.html")
 	contextVaribles := &Routes{
 		Title:     "Welcome to Node Twitter API",
-		FirstURL:  routes[0],
-		SecondURL: routes[1],
-		ThirdURL:  routes[2],
-		ForthURL:  routes[3],
-		FifthURL:  routes[4],
-		SixthURL:  routes[5],
+		CurrentUserURl:  routes[0],
+		UserListURL: routes[1],
+		TweetURL:  routes[2],
+		TweetListURL:  routes[3],
+		AnalyticURL:  routes[4],
+		AnalyticListURL:  routes[5],
 	}
 	t.Execute(w, contextVaribles)
 }
