@@ -39,20 +39,6 @@ type Analytic struct {
 	URL  string
 }
 
-// Routes   routes of the API
-type Routes struct {
-	Title     string
-	FirstURL  string
-	SecondURL string
-	ThirdURL  string
-	ForthURL  string
-	FifthURL  string
-	SixthURL  string
-}
-
-// Query Map
-type Query map[string]string
-
 // Get Analytic and return it.
 func getAnalytic(session *mgo.Session, err error) Analytic {
 	AnalyticConnection := session.DB("ntwitter").C("analytics")
