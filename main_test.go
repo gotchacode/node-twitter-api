@@ -1,4 +1,4 @@
-package node_twitter_api
+package NodeTwitterAPI
 
 import "testing"
 

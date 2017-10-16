@@ -4,32 +4,16 @@
 // - Small isolated modular functions that provide an easy interface to build
 // upon.
 
-package node_twitter_api
+package NodeTwitterAPI
 
 import (
+	"encoding/json"
 	"fmt"
-	"html/template"
-	"log"
 	"net/http"
-	"os"
 
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
-
-// Routes   routes of the API
-type Routes struct {
-	Title     string
-	FirstURL  string
-	SecondURL string
-	ThirdURL  string
-	ForthURL  string
-	FifthURL  string
-	SixthURL  string
-}
-
-// Query Map
-type Query map[string]string
 
 // User struct
 type User struct {
@@ -55,33 +39,19 @@ type Analytic struct {
 	URL  string
 }
 
-// Connect to the MongoDB
-func connectDB(dailURL string, debug bool) (*mgo.Session, error) {
-	if debug {
-		mgo.SetDebug(debug)
-
-		var aLogger *log.Logger
-		aLogger = log.New(os.Stderr, "", log.LstdFlags)
-		mgo.SetLogger(aLogger)
-	}
-	session, err := mgo.Dial(dailURL)
-	fmt.Println("Trying to connect to DB")
-	if err != nil {
-		panic(err)
-	}
-	session.SetMode(mgo.Monotonic, true)
-	return session, err
+// Routes   routes of the API
+type Routes struct {
+	Title     string
+	FirstURL  string
+	SecondURL string
+	ThirdURL  string
+	ForthURL  string
+	FifthURL  string
+	SixthURL  string
 }
 
-// Get session and returns it for a valid session, else throw an error
-func getSession() (session *mgo.Session, err error) {
-	var mongodbURL = os.Getenv("MONGODB_URL")
-	sessionMongo, errMongo := connectDB(mongodbURL, false)
-	if errMongo != nil {
-		log.Fatal(errMongo)
-	}
-	return sessionMongo, errMongo
-}
+// Query Map
+type Query map[string]string
 
 // Get Analytic and return it.
 func getAnalytic(session *mgo.Session, err error) Analytic {
@@ -150,7 +120,9 @@ func UserHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := getSession()
 	var user User
 	user = getUser(session, err)
-	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div><div>%s</div>", user.Name, user.Email, user)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(user)
 }
 
 // UsersHandler   : Returns list of all users in the database.
@@ -158,7 +130,8 @@ func UsersHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := getSession()
 	var users []User
 	users = getUsers(session, err)
-	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Users", users)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(users)
 }
 
 // TweetsHandler   : Returns list of all tweets in the database.
@@ -166,7 +139,8 @@ func TweetsHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := getSession()
 	var tweets []Tweet
 	tweets = getTweets(session, err)
-	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Tweets", tweets)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(tweets)
 }
 
 // TweetHandler  : Returns tweet by an user in the database.
@@ -174,7 +148,8 @@ func TweetHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := getSession()
 	var tweet Tweet
 	tweet = getTweet(session, err)
-	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Tweet", tweet)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(tweet)
 }
 
 // AnalyticHandler   : Return one analytic entry from the database.
@@ -182,7 +157,8 @@ func AnalyticHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := getSession()
 	var analytic Analytic
 	analytic = getAnalytic(session, err)
-	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Analytic", analytic)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(analytic)
 }
 
 // AnalyticsHandler   : Returns list of all analytics in the database.
@@ -190,32 +166,36 @@ func AnalyticsHandler(w http.ResponseWriter, r *http.Request) {
 	session, err := getSession()
 	var analytics []Analytic
 	analytics = getAnalytics(session, err)
-	fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", "Returning Analytics", analytics)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(analytics)
 }
 
 // BaseHandler   Show a landing page with links of the APIs.
 func BaseHandler(w http.ResponseWriter, r *http.Request) {
-	routes := []string{"/currentuser", "/users", "/tweet", "/tweets", "/analytic", "/analytics"}
-	t, _ := template.ParseFiles("base.html")
-	contextVaribles := &Routes{
-		Title:     "Welcome to Node Twitter API",
-		FirstURL:  routes[0],
-		SecondURL: routes[1],
-		ThirdURL:  routes[2],
-		ForthURL:  routes[3],
-		FifthURL:  routes[4],
-		SixthURL:  routes[5],
-	}
-	t.Execute(w, contextVaribles)
-}
-
-func main() {
-	http.HandleFunc("/", BaseHandler)
-	http.HandleFunc("/currentuser", UserHandler)
-	http.HandleFunc("/users", UsersHandler)
-	http.HandleFunc("/tweet", TweetHandler)
-	http.HandleFunc("/tweets", TweetsHandler)
-	http.HandleFunc("/analytic", AnalyticHandler)
-	http.HandleFunc("/analytics", AnalyticsHandler)
-	http.ListenAndServe(":8080", nil)
+	w.Header().Set("Doctor", "Strange")
+	var homePage = `<h1>Welcome to node twitter API</h1>
+	
+	<br>
+	For more details: Please visit the following:
+	<ul>
+	<li>
+	<a href="/currentuser">Current user</a>
+	</li>
+	<li>
+	<a href="/users">Users List</a> 	
+	</li>
+	<li>
+	<a href="/tweet">Tweet</a> 
+	</li>
+	<li>
+	<a href="/tweets">Tweets</a> 
+	</li>
+	<li>
+	<a href="/analytic">Analytic</a> 
+	</li>
+	<li>	
+	<a href="/analytics">Analytics</a> 
+	</li>
+	`
+	fmt.Fprintf(w, homePage)
 }
