@@ -3,6 +3,9 @@
 
 Node Twitter API written with Go and MongoDB
 
+The database and the model is based from this project [Node Twitter](https://github.com/vinitkumar/node-twitter/tree/master/app/models)
+
+
 In order to use it, follow this example
 
 
